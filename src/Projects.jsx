@@ -211,7 +211,7 @@ export function ProjectCard() {
   }, [activeDialog]);
 
   return (
-    <article className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-transparent shadow-none transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] hover:border-purple-400 hover:shadow-[0_0_25px_rgba(168,85,247,0.4)]">
+    <article className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-transparent shadow-none transition-all duration-300 md:hover:-translate-y-2 md:hover:scale-[1.02] md:hover:border-purple-400 md:hover:shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 active:border-purple-400 active:shadow-[0_0_25px_rgba(168,85,247,0.4)]">
       <div className="project-preview">
         <img
           src={screenshots[activeScreenshot].src}

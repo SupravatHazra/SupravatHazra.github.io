@@ -235,6 +235,11 @@ img {
 }
 
 @media (min-width: 768px) {
+  .site-header {
+    background-color: rgba(23, 17, 28, 0.9);
+    backdrop-filter: blur(16px);
+  }
+
   .project-fullscreen-panel {
     flex-direction: row;
   }
@@ -407,8 +412,7 @@ footer {
 .site-header {
   position: sticky;
   top: 0;
-  background-color: rgba(23, 17, 28, 0.9);
-  backdrop-filter: blur(16px);
+  background-color: rgba(30, 8, 54, 0.95);
   border-bottom: 1px solid rgba(226, 205, 239, 0.12);
   z-index: 100;
 }
@@ -1138,7 +1142,7 @@ body {
 
 .card,
 .skill-bar {
-  @apply rounded-2xl border border-white/10 bg-transparent shadow-none transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] hover:border-purple-400 hover:shadow-[0_0_25px_rgba(168,85,247,0.4)];
+  @apply rounded-2xl border border-white/10 bg-transparent shadow-none transition-all duration-300 md:hover:-translate-y-2 md:hover:scale-[1.02] md:hover:border-purple-400 md:hover:shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 active:border-purple-400 active:shadow-[0_0_25px_rgba(168,85,247,0.4)];
   color: var(--color-text);
   backdrop-filter: none;
 }
