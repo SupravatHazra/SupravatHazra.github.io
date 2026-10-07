@@ -1,0 +1,408 @@
+Option Explicit
+Sub UpdateDashboard()
+
+    Application.ScreenUpdating = False
+
+    UpdateKPIs
+
+    UpdateDepartmentDashboard
+
+    UpdateRegionDashboard
+
+    UpdateYearDashboard
+
+    UpdatePieDashboard
+
+    Application.ScreenUpdating = True
+
+End Sub
+
+
+Sub UpdateKPIs()
+
+    '==========================================================
+    ' Procedure : UpdateKPIs
+    ' Purpose   : Updates Dashboard KPI Cards
+    '==========================================================
+
+    Dim wsOutput As Worksheet
+    Dim wsDash As Worksheet
+    Dim LastRow As Long
+
+    Set wsOutput = Worksheets("Output")
+    Set wsDash = Worksheets("Dashboard")
+
+    LastRow = wsOutput.Cells(wsOutput.Rows.Count, "A").End(xlUp).Row
+
+    '----------------------------------------------------------
+    ' No Data Found
+    '----------------------------------------------------------
+    If LastRow < 2 Then
+
+        With wsDash
+
+            .Range("C5:C9").ClearContents
+
+            .Range("C3").Value = Now
+            .Range("C3").NumberFormat = "dd-mmm-yyyy hh:mm AM/PM"
+
+            .Range("C4").Value = "No Data"
+            .Range("C4").Font.Bold = True
+            .Range("C4").Font.Color = RGB(192, 0, 0)
+
+        End With
+
+        Exit Sub
+
+    End If
+
+    '----------------------------------------------------------
+    ' Update KPI Cards
+    '----------------------------------------------------------
+
+    With wsDash
+
+        'Last Updated
+        .Range("C3").Value = Now
+        .Range("C3").NumberFormat = "dd-mmm-yyyy hh:mm AM/PM"
+
+        'Dashboard Status
+        .Range("C4").Value = "Ready"
+        .Range("C4").Font.Bold = True
+        .Range("C4").Font.Color = RGB(0, 128, 0)
+
+        'Records
+        .Range("C5").Value = LastRow - 1
+
+        'Total Sales
+        .Range("C6").Value = _
+            Application.WorksheetFunction.Sum(wsOutput.Range("E2:E" & LastRow))
+
+        'Average Sales
+        .Range("C7").Value = _
+            Application.WorksheetFunction.Average(wsOutput.Range("E2:E" & LastRow))
+
+        'Highest Sales
+        .Range("C8").Value = _
+            Application.WorksheetFunction.Max(wsOutput.Range("E2:E" & LastRow))
+
+        'Lowest Sales
+        .Range("C9").Value = _
+            Application.WorksheetFunction.Min(wsOutput.Range("E2:E" & LastRow))
+
+        'Formatting
+        With .Range("C5:C9")
+            .Font.Bold = True
+            .Font.Size = 13
+            .HorizontalAlignment = xlCenter
+        End With
+
+        .Range("C6:C9").NumberFormat = "#,##0"
+
+        .Range("C5").Font.Color = RGB(0, 102, 204)     'Blue
+        .Range("C6").Font.Color = RGB(0, 128, 0)       'Green
+        .Range("C7").Font.Color = RGB(255, 140, 0)     'Orange
+        .Range("C8").Font.Color = RGB(192, 0, 0)       'Red
+        .Range("C9").Font.Color = RGB(128, 0, 128)     'Purple'
+
+    End With
+
+End Sub
+
+'UpdateDepartmentSummary
+Sub UpdateDepartmentSummary()
+ ' Declare Variables
+    Dim wsOutput As Worksheet
+    Dim wsDash As Worksheet
+
+    Dim Dict As Object
+
+    Dim LastRow As Long
+    Dim i As Long
+    Dim r As Long
+
+    Dim Dept As String
+    Dim Sales As Double
+
+    Dim Key As Variant
+' Reference the worksheets
+    Set wsOutput = Worksheets("Output")
+    Set wsDash = Worksheets("Dashboard")
+' Find the last row in Output Sheet
+    LastRow = wsOutput.Cells(wsOutput.Rows.Count, "A").End(xlUp).Row
+    ' Clear the previous summary table
+    wsDash.Range("AA2:AB100").ClearContents
+    'If no filtered data exists,
+    ' stop the procedure.
+    If LastRow < 2 Then Exit Sub
+     ' Create the Summary Table Headers
+    wsDash.Range("AA2").Value = "Department"
+    wsDash.Range("AB2").Value = "Total Sales"
+    ' Create the Dictionary
+    '
+    ' Dictionary stores:
+    '
+    ' Key   -> Department
+    ' Item  -> Total Sales
+    Set Dict = CreateObject("Scripting.Dictionary")
+    
+    ' Loop through every filtered record
+    For i = 2 To LastRow
+     ' Read Department
+        ' Column C
+        Dept = wsOutput.Cells(i, "C").Value
+      ' Read Sales
+        ' Column E
+        Sales = wsOutput.Cells(i, "E").Value
+        
+         ' If Department already exists
+        ' add the Sales.
+        '
+        ' Example
+        '
+        ' Sales = 150000
+        ' Existing = 350000
+        '
+        ' New Total = 500000
+        If Dict.Exists(Dept) Then
+
+            Dict(Dept) = Dict(Dept) + Sales
+
+        Else
+         ' First time Department found.
+            ' Add it to Dictionary.
+            Dict.Add Dept, Sales
+
+        End If
+
+    Next i
+
+    r = 3 ' Start writing summary from Row 3
+    ' Format the Summary Table
+    For Each Key In Dict.Keys
+
+        wsDash.Cells(r, "AA").Value = Key
+        wsDash.Cells(r, "AB").Value = Dict(Key)
+
+        r = r + 1
+
+    Next Key
+   '----------------------------------------------------------
+' Format the Summary Table
+'----------------------------------------------------------
+
+With wsDash.Range("AA2:AB2")
+
+    .Font.Bold = True
+    .Interior.Color = RGB(0, 112, 192)
+    .Font.Color = RGB(255, 255, 255)
+
+End With
+
+With wsDash.Range("AB3:AB" & r - 1)
+
+    .NumberFormat = "#,##,##0"
+
+End With
+
+'----------------------------------------------------------
+' AutoFit Columns
+'----------------------------------------------------------
+
+wsDash.Columns("AA:AB").AutoFit
+    
+
+End Sub
+
+Sub SortDepartmentSummary()
+    ' Procedure : SortDepartmentSummary
+    ' Purpose   : Sort the Department Summary table by
+    '             Total Sales (Highest to Lowest)
+    Dim wsDash As Worksheet
+    Dim LastRow As Long
+    ' Reference Dashboard Sheet
+    Set wsDash = Worksheets("Dashboard")
+    ' Find the last row of the summary table
+    LastRow = wsDash.Cells(wsDash.Rows.Count, "AA").End(xlUp).Row
+    ' Exit if there is no data to sort
+    If LastRow < 3 Then Exit Sub
+
+    '----------------------------------------------------------
+    ' Sort the Department Summary
+    '
+    ' Column AA = Department
+    ' Column AB = Total Sales
+    '
+    ' Sort By:
+    ' Column AB (Largest to Smallest)
+    '----------------------------------------------------------
+    With wsDash.Sort
+
+        .SortFields.Clear
+
+        .SortFields.Add _
+            Key:=wsDash.Range("AB3:AB" & LastRow), _
+            SortOn:=xlSortOnValues, _
+            Order:=xlDescending, _
+            DataOption:=xlSortNormal
+
+        .SetRange wsDash.Range("AA2:AB" & LastRow)
+
+        .Header = xlYes
+
+        .MatchCase = False
+
+        .Orientation = xlTopToBottom
+
+        .Apply
+
+    End With
+
+End Sub
+
+Sub SetupDepartmentChart()
+    '==========================================================
+    ' Procedure : SetupDepartmentChart
+    ' Purpose   : Creates the Department Chart only once.
+    '             If the chart already exists, the procedure
+    '             exits without creating another chart.
+    '==========================================================
+
+    '----------------------------------------------------------
+    ' Declare Variables
+    '----------------------------------------------------------
+    Dim wsDash As Worksheet
+    Dim ChObj As ChartObject
+    Dim LastRow As Long
+
+    '----------------------------------------------------------
+    ' Reference Dashboard Sheet
+    '----------------------------------------------------------
+    Set wsDash = Worksheets("Dashboard")
+
+    '----------------------------------------------------------
+    ' Find Last Row of Summary Table
+    '----------------------------------------------------------
+    LastRow = wsDash.Cells(wsDash.Rows.Count, "AA").End(xlUp).Row
+    If LastRow < 3 Then Exit Sub
+
+    '----------------------------------------------------------
+    ' Check if Chart already exists
+    '----------------------------------------------------------
+    On Error Resume Next
+    Set ChObj = wsDash.ChartObjects("DeptChart")
+    On Error GoTo 0
+
+    If Not ChObj Is Nothing Then Exit Sub
+    ' Create New Chart
+    Set ChObj = wsDash.ChartObjects.Add( _
+                    Left:=wsDash.Range("E5").Left, _
+                    Top:=wsDash.Range("E5").Top, _
+                    Width:=700, _
+                    Height:=350)
+
+    ChObj.Name = "DeptChart"
+    ' Configure Chart
+    With ChObj.Chart
+        ' Chart Type
+        .ChartType = xlColumnClustered
+        ' Data Source
+        .SetSourceData Source:=wsDash.Range("AA2:AB" & LastRow)
+        .PlotVisibleOnly = False
+        
+        ' Chart Title
+        .HasTitle = True
+        .ChartTitle.Text = "Sales by Department"
+
+        With .ChartTitle.Format.TextFrame2.TextRange.Font
+            .Size = 16
+            .Bold = msoTrue
+        End With
+        ' Hide Legend
+        .HasLegend = False
+        ' X-Axis
+        .Axes(xlCategory).HasTitle = True
+        .Axes(xlCategory).AxisTitle.Text = "Department"
+
+        .Axes(xlCategory).TickLabels.Font.Size = 10
+        .Axes(xlCategory).TickLabels.Orientation = 45
+        ' Y-Axis
+        .Axes(xlValue).HasTitle = True
+        .Axes(xlValue).AxisTitle.Text = "Total Sales"
+
+        .Axes(xlValue).TickLabels.Font.Size = 10
+        .Axes(xlValue).TickLabels.NumberFormat = "#,##,##0"
+        ' Data Labels
+        .ApplyDataLabels
+
+        With .SeriesCollection(1).DataLabels
+            .ShowValue = True
+            .Position = xlLabelPositionOutsideEnd
+            .Font.Bold = True
+            .Font.Size = 10
+        End With
+        ' Column Color
+        With .SeriesCollection(1).Format.Fill
+            .Visible = msoTrue
+            .Solid
+            .ForeColor.RGB = RGB(0, 112, 192)
+        End With
+        ' Make Columns Thicker
+        .ChartGroups(1).GapWidth = 50
+        ' Remove Borders
+        .ChartArea.Format.Line.Visible = msoFalse
+        .PlotArea.Format.Line.Visible = msoFalse
+        ' Gridlines
+        .Axes(xlValue).MajorGridlines.Format.Line.ForeColor.RGB = RGB(220, 220, 220)
+
+    End With
+
+End Sub
+
+
+Sub UpdateDepartmentChart()
+
+    Dim wsDash As Worksheet
+    Dim ChObj As ChartObject
+    Dim LastRow As Long
+
+    Set wsDash = Worksheets("Dashboard")
+
+    LastRow = wsDash.Cells(wsDash.Rows.Count, "AA").End(xlUp).Row
+
+    Set ChObj = wsDash.ChartObjects("DeptChart")
+
+    If LastRow < 3 Then
+
+        'No data available
+        On Error Resume Next
+        ChObj.Chart.SeriesCollection(1).Delete
+        On Error GoTo 0
+
+        Exit Sub
+
+    End If
+
+    With ChObj.Chart
+
+        .ChartType = xlColumnClustered
+
+        .SetSourceData Source:=wsDash.Range("AA2:AB" & LastRow)
+
+        .Refresh
+
+    End With
+
+End Sub
+
+Sub UpdateDepartmentDashboard()
+
+    UpdateDepartmentSummary
+
+    SortDepartmentSummary
+
+    SetupDepartmentChart
+
+    UpdateDepartmentChart
+
+End Sub

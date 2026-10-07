@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1200" fill="none">
+  <defs>
+    <radialGradient id="space" cx="50%" cy="46%" r="75%">
+      <stop offset="0" stop-color="#211031"/>
+      <stop offset=".56" stop-color="#10091c"/>
+      <stop offset="1" stop-color="#05040b"/>
+    </radialGradient>
+    <radialGradient id="nebulaA">
+      <stop stop-color="#9B4DC5" stop-opacity=".58"/>
+      <stop offset=".42" stop-color="#662C99" stop-opacity=".32"/>
+      <stop offset="1" stop-color="#321548" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="nebulaB">
+      <stop stop-color="#C06ADB" stop-opacity=".38"/>
+      <stop offset=".45" stop-color="#78369E" stop-opacity=".2"/>
+      <stop offset="1" stop-color="#321548" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="dust" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#D9A8F0" stop-opacity="0"/>
+      <stop offset=".48" stop-color="#B568D8" stop-opacity=".23"/>
+      <stop offset=".54" stop-color="#E2B8F2" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#8D49B5" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="blurLarge" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="62"/>
+    </filter>
+    <filter id="blurDust" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+  <path fill="url(#space)" d="M0 0h1600v1200H0z"/>
+  <g filter="url(#blurLarge)">
+    <ellipse cx="435" cy="380" fill="url(#nebulaA)" rx="510" ry="245" transform="rotate(-28 435 380)"/>
+    <ellipse cx="1170" cy="760" fill="url(#nebulaB)" rx="570" ry="260" transform="rotate(-28 1170 760)"/>
+    <ellipse cx="810" cy="160" fill="url(#nebulaB)" rx="390" ry="180" transform="rotate(-24 810 160)"/>
+  </g>
+  <path d="M-120 690C250 535 330 400 625 340c290-59 430 86 1095-247" stroke="url(#dust)" stroke-width="180" filter="url(#blurDust)"/>
+  <g fill="#F7EAFE">
+    <circle cx="74" cy="102" r="1.4" opacity=".78"/><circle cx="169" cy="269" r="1" opacity=".55"/>
+    <circle cx="267" cy="75" r="1.2" opacity=".68"/><circle cx="357" cy="190" r="1" opacity=".52"/>
+    <circle cx="488" cy="98" r="1.8" opacity=".85"/><circle cx="591" cy="254" r="1" opacity=".6"/>
+    <circle cx="707" cy="128" r="1.1" opacity=".74"/><circle cx="824" cy="67" r="1.6" opacity=".78"/>
+    <circle cx="927" cy="225" r="1" opacity=".57"/><circle cx="1030" cy="99" r="1.4" opacity=".76"/>
+    <circle cx="1128" cy="179" r="1" opacity=".58"/><circle cx="1237" cy="82" r="1.7" opacity=".86"/>
+    <circle cx="1370" cy="198" r="1.1" opacity=".72"/><circle cx="1511" cy="96" r="1.3" opacity=".77"/>
+    <circle cx="119" cy="442" r="1.1" opacity=".65"/><circle cx="236" cy="565" r="1.7" opacity=".8"/>
+    <circle cx="391" cy="476" r="1" opacity=".58"/><circle cx="543" cy="618" r="1.3" opacity=".72"/>
+    <circle cx="686" cy="491" r="1.8" opacity=".8"/><circle cx="844" cy="579" r="1" opacity=".55"/>
+    <circle cx="993" cy="433" r="1.2" opacity=".7"/><circle cx="1142" cy="601" r="1.6" opacity=".82"/>
+    <circle cx="1291" cy="472" r="1" opacity=".61"/><circle cx="1453" cy="577" r="1.5" opacity=".8"/>
+    <circle cx="63" cy="783" r="1.6" opacity=".8"/><circle cx="202" cy="914" r="1" opacity=".59"/>
+    <circle cx="341" cy="817" r="1.3" opacity=".7"/><circle cx="467" cy="1033" r="1.7" opacity=".82"/>
+    <circle cx="626" cy="897" r="1" opacity=".58"/><circle cx="771" cy="1081" r="1.3" opacity=".72"/>
+    <circle cx="916" cy="903" r="1.7" opacity=".86"/><circle cx="1076" cy="1059" r="1" opacity=".62"/>
+    <circle cx="1212" cy="875" r="1.4" opacity=".78"/><circle cx="1361" cy="1028" r="1" opacity=".57"/>
+    <circle cx="1524" cy="851" r="1.8" opacity=".83"/><circle cx="1470" cy="1146" r="1.1" opacity=".7"/>
+  </g>
+  <g fill="#D7A8EF">
+    <circle cx="322" cy="330" r="2.1" opacity=".68"/><circle cx="778" cy="345" r="2.4" opacity=".62"/>
+    <circle cx="1084" cy="318" r="1.9" opacity=".72"/><circle cx="1332" cy="728" r="2.2" opacity=".65"/>
+    <circle cx="293" cy="1070" r="2" opacity=".68"/><circle cx="912" cy="760" r="2.3" opacity=".67"/>
+  </g>
+</svg>

@@ -1,0 +1,231 @@
+Option Explicit
+Sub UpdateYearSummary()
+
+    Dim wsOutput As Worksheet
+    Dim wsDash As Worksheet
+    Dim Dict As Object
+
+    Dim LastRow As Long
+    Dim i As Long
+    Dim r As Long
+
+    Dim Yr As Variant
+    Dim Sales As Double
+    Dim Key As Variant
+
+    Set wsOutput = Worksheets("Output")
+    Set wsDash = Worksheets("Dashboard")
+
+    LastRow = wsOutput.Cells(wsOutput.Rows.Count, "A").End(xlUp).Row
+
+    wsDash.Range("AG2:AH100").ClearContents
+
+    If LastRow < 2 Then Exit Sub
+
+    wsDash.Range("AG2").Value = "Year"
+    wsDash.Range("AH2").Value = "Total Sales"
+
+    Set Dict = CreateObject("Scripting.Dictionary")
+
+    For i = 2 To LastRow
+
+        Yr = wsOutput.Cells(i, "G").Value
+        Sales = wsOutput.Cells(i, "E").Value
+
+        If Dict.Exists(Yr) Then
+            Dict(Yr) = Dict(Yr) + Sales
+        Else
+            Dict.Add Yr, Sales
+        End If
+
+    Next i
+
+    r = 3
+
+    For Each Key In Dict.Keys
+
+        wsDash.Cells(r, "AG").Value = Key
+        wsDash.Cells(r, "AH").Value = Dict(Key)
+
+        r = r + 1
+
+    Next Key
+
+    With wsDash.Range("AG2:AH2")
+        .Font.Bold = True
+        .Interior.Color = RGB(0, 112, 192)
+        .Font.Color = RGB(255, 255, 255)
+    End With
+
+    wsDash.Range("AH3:AH" & r - 1).NumberFormat = "#,##,##0"
+
+    wsDash.Columns("AG:AH").AutoFit
+
+End Sub
+
+Sub SortYearSummary()
+    '==========================================================
+    ' Procedure : SortYearSummary
+    ' Purpose   : Sort the Year Summary by Year (Ascending)
+    '==========================================================
+
+    Dim wsDash As Worksheet
+    Dim LastRow As Long
+
+    Set wsDash = Worksheets("Dashboard")
+
+    LastRow = wsDash.Cells(wsDash.Rows.Count, "AG").End(xlUp).Row
+
+    If LastRow < 3 Then Exit Sub
+
+    With wsDash.Sort
+
+        .SortFields.Clear
+
+        .SortFields.Add _
+            Key:=wsDash.Range("AG3:AG" & LastRow), _
+            SortOn:=xlSortOnValues, _
+            Order:=xlAscending, _
+            DataOption:=xlSortNormal
+
+        .SetRange wsDash.Range("AG2:AH" & LastRow)
+
+        .Header = xlYes
+        .MatchCase = False
+        .Orientation = xlTopToBottom
+
+        .Apply
+
+    End With
+
+End Sub
+
+Sub SetupYearChart()
+
+    Dim wsDash As Worksheet
+    Dim ChObj As ChartObject
+    Dim LastRow As Long
+
+    Set wsDash = Worksheets("Dashboard")
+
+    LastRow = wsDash.Cells(wsDash.Rows.Count, "AG").End(xlUp).Row
+
+    If LastRow < 3 Then Exit Sub
+
+    On Error Resume Next
+    Set ChObj = wsDash.ChartObjects("YearChart")
+    On Error GoTo 0
+
+    If Not ChObj Is Nothing Then Exit Sub
+
+    Set ChObj = wsDash.ChartObjects.Add( _
+                    Left:=wsDash.Range("E65").Left, _
+                    Top:=wsDash.Range("E65").Top, _
+                    Width:=700, _
+                    Height:=350)
+
+    ChObj.Name = "YearChart"
+
+    With ChObj.Chart
+
+        .ChartType = xlLineMarkers
+
+        .SetSourceData Source:=wsDash.Range("AG2:AH" & LastRow)
+        .PlotVisibleOnly = False
+
+        .HasTitle = True
+        .ChartTitle.Text = "Sales by Year"
+
+        With .ChartTitle.Format.TextFrame2.TextRange.Font
+            .Size = 16
+            .Bold = msoTrue
+        End With
+
+        .HasLegend = False
+
+        .Axes(xlCategory).HasTitle = True
+        .Axes(xlCategory).AxisTitle.Text = "Year"
+
+        .Axes(xlCategory).TickLabels.Font.Size = 10
+
+        .Axes(xlValue).HasTitle = True
+        .Axes(xlValue).AxisTitle.Text = "Total Sales"
+
+        .Axes(xlValue).TickLabels.Font.Size = 10
+        .Axes(xlValue).TickLabels.NumberFormat = "#,##,##0"
+
+        .ApplyDataLabels
+
+        With .SeriesCollection(1).DataLabels
+            .ShowValue = True
+            .Font.Bold = True
+            .Font.Size = 10
+        End With
+
+        'Purple Line
+        With .SeriesCollection(1).Format.Line
+            .Visible = msoTrue
+            .ForeColor.RGB = RGB(112, 48, 160)
+            .Weight = 2.5
+        End With
+
+        'Circle Markers
+        With .SeriesCollection(1)
+            .MarkerStyle = xlMarkerStyleCircle
+            .MarkerSize = 8
+        End With
+
+        .ChartArea.Format.Line.Visible = msoFalse
+        .PlotArea.Format.Line.Visible = msoFalse
+
+        .Axes(xlValue).MajorGridlines.Format.Line.ForeColor.RGB = RGB(220, 220, 220)
+
+    End With
+
+End Sub
+
+Sub UpdateYearChart()
+
+    Dim wsDash As Worksheet
+    Dim ChObj As ChartObject
+    Dim LastRow As Long
+
+    Set wsDash = Worksheets("Dashboard")
+
+    LastRow = wsDash.Cells(wsDash.Rows.Count, "AG").End(xlUp).Row
+
+    Set ChObj = wsDash.ChartObjects("YearChart")
+
+    If LastRow < 3 Then
+
+        On Error Resume Next
+        ChObj.Chart.SeriesCollection(1).Delete
+        On Error GoTo 0
+
+        Exit Sub
+
+    End If
+
+    With ChObj.Chart
+
+        .ChartType = xlLineMarkers
+
+        .SetSourceData Source:=wsDash.Range("AG2:AH" & LastRow)
+
+        .Refresh
+
+    End With
+
+End Sub
+
+Sub UpdateYearDashboard()
+
+    UpdateYearSummary
+
+    SortYearSummary
+
+    SetupYearChart
+
+    UpdateYearChart
+
+End Sub

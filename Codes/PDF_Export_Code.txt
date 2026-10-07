@@ -1,0 +1,212 @@
+Option Explicit
+
+' ==========================================
+' MACRO 1: SAVE PDF ONLY (With Save As Prompt)
+' ==========================================
+Sub SavePDFOnly()
+    Dim wsOutput As Worksheet, wsEngine As Worksheet
+    Dim LastRow As Long
+    Dim FilePath As String, baseName As String
+    Dim strDept As String, strRegion As String, strYear As String
+    Dim UserFile As Variant ' Added for the Save As dialog
+    
+    Set wsOutput = ThisWorkbook.Worksheets("Output")
+    Set wsEngine = ThisWorkbook.Worksheets("Filter Engine")
+    LastRow = wsOutput.Cells(wsOutput.Rows.Count, "A").End(xlUp).Row
+    
+    If LastRow < 2 Then
+        MsgBox "There is no data to export. Please run a filter first.", vbInformation, "No Data"
+        Exit Sub
+    End If
+    
+    ' Build dynamic file name
+    strDept = wsEngine.Range("N4").Value
+    strRegion = wsEngine.Range("N5").Value
+    strYear = wsEngine.Range("N8").Value
+    
+    baseName = "Report"
+    If strRegion <> "" Then baseName = baseName & "_" & strRegion
+    If strDept <> "" Then baseName = baseName & "_" & strDept
+    If strYear <> "" Then baseName = baseName & "_" & strYear
+    
+    ' Set the default path and name for the dialog box
+    FilePath = ThisWorkbook.Path & "\" & baseName & ".pdf"
+    
+    ' ---------------------------------------------------------
+    ' NEW: Trigger the "Save As" Dialog Box
+    ' ---------------------------------------------------------
+    UserFile = Application.GetSaveAsFilename( _
+        InitialFileName:=FilePath, _
+        FileFilter:="PDF Files (*.pdf), *.pdf", _
+        Title:="Check & Save PDF As" _
+    )
+    
+    ' If the user clicks "Cancel" on the dialog box, stop the macro
+    If UserFile = False Then
+        MsgBox "PDF save cancelled.", vbInformation, "Cancelled"
+        Exit Sub
+    End If
+    
+    ' If the user clicked Save, update FilePath with their chosen name/location
+    FilePath = CStr(UserFile)
+    ' ---------------------------------------------------------
+    
+    ' Export PDF and OPEN it automatically
+    wsOutput.Range("A1:G" & LastRow).ExportAsFixedFormat Type:=xlTypePDF, _
+        Filename:=FilePath, Quality:=xlQualityStandard, _
+        IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:=True
+        
+    ' Update Status
+    With wsEngine.Range("N14")
+        .Value = "PDF Saved"
+        .Interior.Color = RGB(0, 112, 192) ' Blue
+        .Font.Bold = True
+    End With
+    
+End Sub
+
+' ==========================================
+' MACRO 3: PRINT PREVIEW FILTERED DATA
+' ==========================================
+Sub PrintPreviewOutput()
+    Dim wsOutput As Worksheet, wsEngine As Worksheet
+    Dim LastRow As Long
+    
+    Set wsOutput = ThisWorkbook.Worksheets("Output")
+    Set wsEngine = ThisWorkbook.Worksheets("Filter Engine")
+    LastRow = wsOutput.Cells(wsOutput.Rows.Count, "A").End(xlUp).Row
+    
+    If LastRow < 2 Then
+        MsgBox "There is no data to preview.", vbInformation, "No Data"
+        Exit Sub
+    End If
+    
+    ' Open the Print Preview screen for the specific range
+    wsOutput.Range("A1:G" & LastRow).PrintPreview
+    
+    ' Update Status
+    With wsEngine.Range("N14")
+        .Value = "Previewed"
+        .Interior.Color = RGB(112, 48, 160) ' Purple
+        .Font.Bold = True
+    End With
+End Sub
+
+Sub ExportChartToPowerPoint()
+    Dim pptApp As Object
+    Dim pptPres As Object
+    Dim pptSlide As Object
+    Dim wsDash As Worksheet
+    Dim chrtObj As ChartObject
+    
+    ' Define Dashboard sheet and Chart
+    Set wsDash = ThisWorkbook.Worksheets("Dashboard")
+    Set chrtObj = wsDash.ChartObjects("DeptChart")
+    
+    ' Copy the chart from Excel
+    chrtObj.Copy
+    
+    ' Open PowerPoint (Creates a new instance if it isn't already open)
+    On Error Resume Next
+    Set pptApp = GetObject(, "PowerPoint.Application")
+    If pptApp Is Nothing Then
+        Set pptApp = CreateObject("PowerPoint.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Make PowerPoint visible to the user
+    pptApp.Visible = True
+    
+    ' Create a new presentation and a blank slide
+    Set pptPres = pptApp.Presentations.Add
+    Set pptSlide = pptPres.Slides.Add(1, 11) ' 11 is the code for a Title Only layout
+    
+    ' Paste the chart onto the slide
+    pptSlide.Shapes.Paste
+    
+    ' Clear memory
+    Set pptSlide = Nothing
+    Set pptPres = Nothing
+    Set pptApp = Nothing
+    
+    MsgBox "Chart exported to PowerPoint successfully!", vbInformation
+End Sub
+
+Sub ExportFullReportToPDF()
+    Dim wsDash As Worksheet
+    Dim wsTemp As Worksheet
+    Dim chrtObj As ChartObject
+    Dim totalSales As String
+    Dim LastRow As Long
+    Dim FilePath As String
+    Dim UserFile As Variant
+    
+    ' 1. Define Dashboard sheet and grab Total Sales
+    Set wsDash = ThisWorkbook.Worksheets("Dashboard")
+    totalSales = wsDash.Range("C6").Text
+    
+    ' Turn off screen updating so the user doesn't see the background work
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    
+    ' 2. Delete the temp sheet if it accidentally already exists, then create a new one
+    On Error Resume Next
+    ThisWorkbook.Worksheets("TempReport").Delete
+    On Error GoTo 0
+    
+    Set wsTemp = ThisWorkbook.Worksheets.Add
+    wsTemp.Name = "TempReport"
+    
+    ' 3. Write and format the narrative summary
+    wsTemp.Range("B2").Value = "Executive Sales Summary"
+    wsTemp.Range("B2").Font.Bold = True
+    wsTemp.Range("B2").Font.Size = 16
+    
+    wsTemp.Range("B4").Value = "The total sales for the current filtered data amount to " & totalSales & "."
+    wsTemp.Range("B4").Font.Size = 12
+    
+    ' 4. Copy and paste the Department Chart
+    Set chrtObj = wsDash.ChartObjects("DeptChart")
+    chrtObj.Copy
+    ' Paste the chart starting at cell B6
+    wsTemp.Paste Destination:=wsTemp.Range("B6")
+    
+    ' 5. Copy and paste the Summary Table (Columns AA & AB)
+    LastRow = wsDash.Cells(wsDash.Rows.Count, "AA").End(xlUp).Row
+    If LastRow >= 2 Then
+        wsDash.Range("AA2:AB" & LastRow).Copy
+        ' Paste the table below the chart (Row 28 is safely below a standard chart)
+        wsTemp.Range("B28").PasteSpecial Paste:=xlPasteAll
+        wsTemp.Columns("B:C").AutoFit
+    End If
+    
+    ' 6. Hide gridlines on the temp sheet for a clean PDF look
+    ActiveWindow.DisplayGridlines = False
+    
+    ' 7. Trigger the "Save As" Dialog Box for the user
+    FilePath = ThisWorkbook.Path & "\Executive_Report.pdf"
+    UserFile = Application.GetSaveAsFilename( _
+        InitialFileName:=FilePath, _
+        FileFilter:="PDF Files (*.pdf), *.pdf", _
+        Title:="Save Report As PDF" _
+    )
+    
+    ' 8. Export the PDF if the user didn't hit Cancel
+    If UserFile <> False Then
+        FilePath = CStr(UserFile)
+        wsTemp.ExportAsFixedFormat Type:=xlTypePDF, _
+            Filename:=FilePath, Quality:=xlQualityStandard, _
+            IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:=True
+            
+        MsgBox "Full report exported to PDF successfully!", vbInformation
+    Else
+        MsgBox "PDF save cancelled.", vbInformation
+    End If
+    
+    ' 9. Clean up: Delete the temporary sheet and turn screen updating back on
+    wsTemp.Delete
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    
+End Sub
+

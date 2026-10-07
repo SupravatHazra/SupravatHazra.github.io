@@ -1,0 +1,105 @@
+Option Explicit
+
+Sub SetupPieChart()
+
+    Dim wsDash As Worksheet
+    Dim ChObj As ChartObject
+    Dim LastRow As Long
+
+    Set wsDash = Worksheets("Dashboard")
+
+    LastRow = wsDash.Cells(wsDash.Rows.Count, "AA").End(xlUp).Row
+
+    If LastRow < 3 Then Exit Sub
+
+    On Error Resume Next
+    Set ChObj = wsDash.ChartObjects("PieChart")
+    On Error GoTo 0
+
+    If Not ChObj Is Nothing Then Exit Sub
+
+    Set ChObj = wsDash.ChartObjects.Add( _
+                    Left:=wsDash.Range("E95").Left, _
+                    Top:=wsDash.Range("E95").Top, _
+                    Width:=700, _
+                    Height:=350)
+
+    ChObj.Name = "PieChart"
+
+    With ChObj.Chart
+
+        .ChartType = xlPie
+
+        .SetSourceData wsDash.Range("AA2:AB" & LastRow)
+        .PlotVisibleOnly = False
+
+        .HasTitle = True
+        .ChartTitle.Text = "Department Share"
+
+        With .ChartTitle.Format.TextFrame2.TextRange.Font
+            .Size = 16
+            .Bold = msoTrue
+        End With
+
+        .HasLegend = True
+        .Legend.Position = xlLegendPositionRight
+
+        .ApplyDataLabels
+
+        With .SeriesCollection(1).DataLabels
+        
+            .ShowCategoryName = True
+            .ShowPercentage = True
+            .ShowValue = False
+            .Separator = vbNewLine
+            .Font.Size = 10
+            .Font.Bold = True
+        End With
+
+        .ChartArea.Format.Line.Visible = msoFalse
+
+    End With
+
+End Sub
+
+Sub UpdatePieChart()
+
+    Dim wsDash As Worksheet
+    Dim ChObj As ChartObject
+    Dim LastRow As Long
+
+    Set wsDash = Worksheets("Dashboard")
+
+    LastRow = wsDash.Cells(wsDash.Rows.Count, "AA").End(xlUp).Row
+
+    Set ChObj = wsDash.ChartObjects("PieChart")
+
+    If LastRow < 3 Then
+
+        On Error Resume Next
+        ChObj.Chart.SeriesCollection(1).Delete
+        On Error GoTo 0
+
+        Exit Sub
+
+    End If
+
+    With ChObj.Chart
+
+        .ChartType = xlPie
+
+        .SetSourceData wsDash.Range("AA2:AB" & LastRow)
+
+        .Refresh
+
+    End With
+
+End Sub
+
+Sub UpdatePieDashboard()
+
+    SetupPieChart
+
+    UpdatePieChart
+
+End Sub

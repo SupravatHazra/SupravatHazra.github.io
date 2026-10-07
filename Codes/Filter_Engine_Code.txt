@@ -1,0 +1,468 @@
+Option Explicit
+
+Sub RunFilter()
+
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.Calculation = xlCalculationManual
+
+    On Error GoTo ErrorHandler
+    
+    Worksheets("Dashboard").Unprotect Password:="excelbooster"
+    Worksheets("Output").Unprotect Password:="excelbooster"
+
+    Dim EmpID As String
+    Dim EmpName As String
+    Dim Dept As String
+    Dim Reg As String
+    Dim SalesInput As String
+    Dim SalaryInput As String
+    Dim YrInput As String
+
+    Dim RecordsFound As Long
+
+    'Read values from Filter Engine
+    ReadInputs EmpID, EmpName, Dept, Reg, SalesInput, SalaryInput, YrInput
+
+    'Validate user inputs
+    If Not ValidateInputs(EmpID, EmpName, Dept, Reg, _
+                          SalesInput, SalaryInput, YrInput) Then
+        GoTo ExitHandler
+    End If
+
+    'Create criteria table
+    BuildCriteria EmpID, EmpName, Dept, Reg, _
+                  SalesInput, SalaryInput, YrInput
+
+    'Run Advanced Filter
+    RecordsFound = RunAdvancedFilter()
+
+    'Update Engine Status
+    UpdateStatus "Completed", RecordsFound
+    
+    Call UpdateDashboard
+
+    'Protect again
+    ProtectDashboard
+    ProtectOutput
+
+ExitHandler:
+
+    Application.ScreenUpdating = True
+    Application.EnableEvents = True
+    Application.Calculation = xlCalculationAutomatic
+
+    Exit Sub
+      
+ErrorHandler:
+
+    UpdateStatus "Error", 0
+
+    MsgBox "Error " & Err.Number & vbCrLf & Err.Description, vbCritical
+
+    Resume ExitHandler
+    
+     'Hide helper columns
+    HideDashboardHelperColumns
+
+
+End Sub
+
+Public Sub ReadInputs(ByRef EmpID As String, _
+                      ByRef EmpName As String, _
+                      ByRef Dept As String, _
+                      ByRef Reg As String, _
+                      ByRef SalesInput As String, _
+                      ByRef SalaryInput As String, _
+                      ByRef YrInput As String)
+
+    Dim wsFE As Worksheet
+
+    Set wsFE = ThisWorkbook.Worksheets("Filter Engine")
+
+    With wsFE
+
+        EmpID = Trim(.Range("N2").Value)
+        EmpName = Trim(.Range("N3").Value)
+        Dept = Trim(.Range("N4").Value)
+        Reg = Trim(.Range("N5").Value)
+
+        SalesInput = Trim(.Range("N6").Value)
+        SalaryInput = Trim(.Range("N7").Value)
+        YrInput = Trim(.Range("N8").Value)
+
+    End With
+
+End Sub
+
+Public Function ValidateInputs(ByVal EmpID As String, _
+                               ByVal EmpName As String, _
+                               ByVal Dept As String, _
+                               ByVal Reg As String, _
+                               ByVal SalesInput As String, _
+                               ByVal SalaryInput As String, _
+                               ByVal YrInput As String) As Boolean
+
+    Dim wsFE As Worksheet
+
+    Set wsFE = ThisWorkbook.Worksheets("Filter Engine")
+
+    ValidateInputs = False
+
+    '----------------------------------------
+    ' Validate Sales
+    '----------------------------------------
+    If SalesInput <> "" Then
+
+        If Not ValidateComparisonNumber(SalesInput) Then
+
+            MsgBox "Invalid Sales value.", vbExclamation
+
+            wsFE.Range("N6").Select
+
+            Exit Function
+
+        End If
+
+    End If
+
+    '----------------------------------------
+    ' Validate Salary
+    '----------------------------------------
+    If SalaryInput <> "" Then
+
+        If Not ValidateComparisonNumber(SalaryInput) Then
+
+            MsgBox "Invalid Salary value.", vbExclamation
+
+            wsFE.Range("N7").Select
+
+            Exit Function
+
+        End If
+
+    End If
+
+    '----------------------------------------
+    ' Validate Year
+    '----------------------------------------
+    If YrInput <> "" Then
+
+        If Not IsNumeric(YrInput) Then
+
+            MsgBox "Year must be numeric.", vbExclamation
+
+            wsFE.Range("N8").Select
+
+            Exit Function
+
+        End If
+
+    End If
+
+    ValidateInputs = True
+
+End Function
+
+
+Public Function ValidateComparisonNumber(ByVal UserInput As String) As Boolean
+
+    Dim NumberPart As String
+
+    ValidateComparisonNumber = False
+
+    UserInput = Trim(UserInput)
+
+    '----------------------------------------
+    ' >=  or <=
+    '----------------------------------------
+    If Left(UserInput, 2) = ">=" Or _
+       Left(UserInput, 2) = "<=" Then
+
+        NumberPart = Mid(UserInput, 3)
+
+    '----------------------------------------
+    ' >  <  =
+    '----------------------------------------
+    ElseIf Left(UserInput, 1) = ">" Or _
+           Left(UserInput, 1) = "<" Or _
+           Left(UserInput, 1) = "=" Then
+
+        NumberPart = Mid(UserInput, 2)
+
+    '----------------------------------------
+    ' Number only
+    '----------------------------------------
+    Else
+
+        NumberPart = UserInput
+
+    End If
+
+    '----------------------------------------
+    ' Validate number
+    '----------------------------------------
+    If Not IsNumeric(NumberPart) Then Exit Function
+
+    If CDbl(NumberPart) <= 0 Then Exit Function
+
+    ValidateComparisonNumber = True
+
+End Function
+
+Public Sub BuildCriteria(ByVal EmpID As String, _
+                         ByVal EmpName As String, _
+                         ByVal Dept As String, _
+                         ByVal Reg As String, _
+                         ByVal SalesInput As String, _
+                         ByVal SalaryInput As String, _
+                         ByVal YrInput As String)
+
+    Dim wsFE As Worksheet
+
+    Set wsFE = ThisWorkbook.Worksheets("Filter Engine")
+
+    With wsFE
+
+        'Employee ID
+        .Range("A3").Value = EmpID
+
+        'Employee Name
+        .Range("B3").Value = EmpName
+
+        'Department
+        .Range("C3").Value = Dept
+
+        'Region
+        .Range("D3").Value = Reg
+
+        'Sales
+        If SalesInput <> "" Then
+            .Range("E3").Value = SalesInput
+        Else
+            .Range("E3").ClearContents
+        End If
+
+        'Salary
+        If SalaryInput <> "" Then
+            .Range("F3").Value = SalaryInput
+        Else
+            .Range("F3").ClearContents
+        End If
+
+        'Year
+        If YrInput <> "" Then
+            .Range("G3").Value = CLng(YrInput)
+        Else
+            .Range("G3").ClearContents
+        End If
+
+    End With
+
+End Sub
+
+Public Function RunAdvancedFilter() As Long
+
+    Dim wsDB As Worksheet
+    Dim wsFE As Worksheet
+    Dim wsOutput As Worksheet
+
+    Dim LastRow As Long
+    Dim RecordsFound As Long
+
+    Set wsDB = ThisWorkbook.Worksheets("Database")
+    Set wsFE = ThisWorkbook.Worksheets("Filter Engine")
+    Set wsOutput = ThisWorkbook.Worksheets("Output")
+
+    '----------------------------------------
+    ' Clear previous output
+    '----------------------------------------
+    wsOutput.Range("A2:G" & wsOutput.Rows.Count).ClearContents
+
+    '----------------------------------------
+    ' Run Advanced Filter
+    '----------------------------------------
+    wsDB.Range("A1").CurrentRegion.AdvancedFilter _
+        Action:=xlFilterCopy, _
+        CriteriaRange:=wsFE.Range("A2:G3"), _
+        CopyToRange:=wsOutput.Range("A1:G1"), _
+        Unique:=False
+
+    '----------------------------------------
+    ' Count records
+    '----------------------------------------
+    LastRow = wsOutput.Cells(wsOutput.Rows.Count, "A").End(xlUp).Row
+
+    If LastRow <= 1 Then
+        RecordsFound = 0
+    Else
+        RecordsFound = LastRow - 1
+    End If
+
+    RunAdvancedFilter = RecordsFound
+
+End Function
+
+Public Sub UpdateStatus(ByVal Status As String, _
+                        ByVal RecordsFound As Long)
+
+    Dim wsFE As Worksheet
+
+    Set wsFE = ThisWorkbook.Worksheets("Filter Engine")
+
+    With wsFE
+
+        'Update Engine Status
+        With .Range("N14")
+
+            .Value = Status
+            .Font.Bold = True
+            .Font.Italic = False
+
+            Select Case UCase(Status)
+
+                Case "READY"
+
+                    .Interior.Color = RGB(217, 217, 217)
+                    .Font.Italic = True
+
+                Case "COMPLETED"
+
+                    .Interior.Color = RGB(0, 176, 80)
+
+                Case "ERROR"
+
+                    .Interior.Color = RGB(255, 0, 0)
+
+                Case Else
+
+                    .Interior.ColorIndex = xlNone
+
+            End Select
+
+        End With
+
+        'Update Timestamp
+        .Range("N15").Value = Now
+
+        'Update Records Found
+        Select Case RecordsFound
+
+            Case 0
+                .Range("N16").Value = "No records found"
+
+            Case 1
+                .Range("N16").Value = "1 record found"
+
+            Case Else
+                .Range("N16").Value = RecordsFound & " records found"
+
+        End Select
+
+    End With
+
+End Sub
+Public Sub ClearFilters()
+
+    Dim Answer As VbMsgBoxResult
+    Dim wsFE As Worksheet
+    Dim wsOutput As Worksheet
+    Set wsFE = ThisWorkbook.Worksheets("Filter Engine")
+    Set wsOutput = ThisWorkbook.Worksheets("Output")
+    Answer = MsgBox( _
+            "Are you sure you want to clear all filters?", _
+            vbQuestion + vbYesNo, _
+            "Confirm")
+    If Answer = vbNo Then Exit Sub
+    With wsFE
+        'Clear user inputs
+        .Range("N2:N8").ClearContents
+        'Clear criteria range
+        .Range("A3:G3").ClearContents
+        'Clear timestamp and record count
+        .Range("N15:N16").ClearContents
+    End With
+    'Clear output sheet
+    wsOutput.Range("A2:G" & wsOutput.Rows.Count).ClearContents
+    'Reset Engine Status
+    UpdateStatus "Ready", 0
+    'Clear timestamp and records after setting Ready
+    wsFE.Range("N15:N16").ClearContents
+    'Move cursor to first input cell
+    Application.GoTo wsFE.Range("M2"), True
+    
+    Call UpdateDashboard
+End Sub
+
+
+Public Sub RefreshLists()
+
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+
+    On Error GoTo ErrorHandler
+
+    Dim wsDB As Worksheet
+    Dim wsLists As Worksheet
+    Dim LastRow As Long
+
+    Set wsDB = ThisWorkbook.Worksheets("Database")
+    Set wsLists = ThisWorkbook.Worksheets("Lists")
+
+    'Clear existing lists
+    wsLists.Range("A:C").ClearContents
+
+    LastRow = wsDB.Cells(wsDB.Rows.Count, "A").End(xlUp).Row
+
+    'Department List
+    wsDB.Range("C1:C" & LastRow).AdvancedFilter _
+        Action:=xlFilterCopy, _
+        CopyToRange:=wsLists.Range("A1"), _
+        Unique:=True
+
+    'Region List
+    wsDB.Range("D1:D" & LastRow).AdvancedFilter _
+        Action:=xlFilterCopy, _
+        CopyToRange:=wsLists.Range("B1"), _
+        Unique:=True
+
+    'Year List
+    wsDB.Range("G1:G" & LastRow).AdvancedFilter _
+        Action:=xlFilterCopy, _
+        CopyToRange:=wsLists.Range("C1"), _
+        Unique:=True
+
+ExitHandler:
+
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+
+    Exit Sub
+
+ErrorHandler:
+
+    MsgBox "Error " & Err.Number & vbCrLf & Err.Description, vbCritical
+
+    Resume ExitHandler
+
+End Sub
+
+Sub MarkTaskComplete()
+    ' This updates the currently selected row in the ChangeLog to 'Completed'
+    Dim CurrentRow As Long
+    CurrentRow = ActiveCell.Row
+    
+    ' Make sure we are on the right sheet and not touching the header
+    If ActiveSheet.Name = "ChangeLog" And CurrentRow > 1 Then
+        
+        ' Update Date to today
+        Cells(CurrentRow, "C").Value = Format(Date, "dd-mm-yyyy")
+        
+        ' Update Status to Checked Box
+        Cells(CurrentRow, "D").Value = ChrW(9745) ' Unicode for ?
+        
+    Else
+        MsgBox "Please select a row on the ChangeLog sheet first.", vbExclamation
+    End If
+End Sub
+

@@ -1,0 +1,155 @@
+Option Explicit
+
+Sub DraftEmailWithPDF()
+
+    On Error GoTo ErrorHandler
+
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.DisplayAlerts = False
+
+    Dim wsOutput As Worksheet
+    Dim wsEngine As Worksheet
+    Dim LastRow As Long
+
+    Dim FilePath As String
+    Dim baseName As String
+    Dim strDept As String
+    Dim strRegion As String
+    Dim strYear As String
+
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+
+    '---------------------------------------
+    ' Set Worksheets
+    '---------------------------------------
+    Set wsOutput = ThisWorkbook.Worksheets("Output")
+    Set wsEngine = ThisWorkbook.Worksheets("Filter Engine")
+
+    LastRow = wsOutput.Cells(wsOutput.Rows.Count, "A").End(xlUp).Row
+
+    If LastRow < 2 Then
+        MsgBox "There is no data to export.", vbInformation, "No Data"
+        GoTo ExitHandler
+    End If
+
+    '---------------------------------------
+    ' Build Dynamic PDF Name
+    '---------------------------------------
+    strDept = Trim(wsEngine.Range("N4").Value)
+    strRegion = Trim(wsEngine.Range("N5").Value)
+    strYear = Trim(wsEngine.Range("N8").Value)
+
+    baseName = "Report"
+
+    If strRegion <> "" Then baseName = baseName & "_" & strRegion
+    If strDept <> "" Then baseName = baseName & "_" & strDept
+    If strYear <> "" Then baseName = baseName & "_" & strYear
+
+    FilePath = ThisWorkbook.Path & "\" & baseName & ".pdf"
+
+    '---------------------------------------
+    ' Status
+    '---------------------------------------
+    With wsEngine.Range("N14")
+        .Value = "Creating PDF..."
+        .Interior.Color = RGB(255, 255, 0)
+        .Font.Bold = True
+    End With
+
+    DoEvents
+
+    '---------------------------------------
+    ' Export PDF
+    '---------------------------------------
+    wsOutput.Range("A1:G" & LastRow).ExportAsFixedFormat _
+        Type:=xlTypePDF, _
+        Filename:=FilePath, _
+        Quality:=xlQualityStandard
+
+    '---------------------------------------
+    ' Status
+    '---------------------------------------
+    With wsEngine.Range("N14")
+        .Value = "Opening Outlook..."
+        .Interior.Color = RGB(0, 176, 240)
+    End With
+
+    DoEvents
+
+    '---------------------------------------
+    ' Start Outlook
+    '---------------------------------------
+    On Error Resume Next
+
+    Set OutlookApp = GetObject(, "Outlook.Application")
+
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+
+    On Error GoTo ErrorHandler
+
+    If OutlookApp Is Nothing Then
+        MsgBox "Cannot start Outlook.", vbCritical
+        GoTo ExitHandler
+    End If
+
+    '---------------------------------------
+    ' Create Email
+    '---------------------------------------
+    Set OutlookMail = OutlookApp.CreateItem(0)
+
+    With OutlookMail
+
+        .To = ""
+
+        .Subject = "Filtered Data : " & Replace(baseName, "_", " ")
+
+        .Body = "Hello," & vbCrLf & vbCrLf & _
+                "Please find the requested data report attached." & vbCrLf & vbCrLf & _
+                "Total Records : " & (LastRow - 1) & vbCrLf & vbCrLf & _
+                "Best Regards," & vbCrLf & _
+                "Excel Booster"
+
+        .Attachments.Add FilePath
+
+        .Display
+
+    End With
+
+    '---------------------------------------
+    ' Status
+    '---------------------------------------
+    With wsEngine.Range("N14")
+        .Value = "Draft Ready"
+        .Interior.Color = RGB(255, 153, 0)
+        .Font.Bold = True
+    End With
+
+ExitHandler:
+
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+
+    Application.DisplayAlerts = True
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+
+    Exit Sub
+
+ErrorHandler:
+
+    MsgBox "Error " & Err.Number & vbCrLf & Err.Description, vbCritical
+
+    With wsEngine.Range("N14")
+        .Value = "Error"
+        .Interior.Color = RGB(255, 0, 0)
+        .Font.Bold = True
+    End With
+
+    Resume ExitHandler
+
+End Sub
+

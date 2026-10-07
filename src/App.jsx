@@ -1,17 +1,30 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import galaxyBg from './assets/galaxy-background.svg';
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from 'react-router-dom';
+import Projects from './Projects';
 
 gsap.registerPlugin(ScrollTrigger);
 
+const StarBackground = lazy(() => import('./StarBackground'));
+
 const navLinks = [
-  { href: '#about', label: 'About' },
-  { href: '#experience', label: 'Experience' },
-  { href: '#skills', label: 'Skills' },
-  { href: '#languages', label: 'Languages' },
-  { href: '#certifications', label: 'Certifications' },
-  { href: '#education', label: 'Education' },
-  { href: '#contact', label: 'Contact', className: 'btn-nav' },
+  { href: '/#about', label: 'About' },
+  { href: '/#experience', label: 'Experience' },
+  { href: '/#skills', label: 'Skills' },
+  { href: '/#languages', label: 'Languages' },
+  { href: '/#certifications', label: 'Certifications' },
+  { href: '/#education', label: 'Education' },
+  { href: '/projects', label: 'Projects' },
+  { href: '/#contact', label: 'Contact', className: 'btn-nav' },
 ];
 
 const industrySkills = [
@@ -122,8 +135,57 @@ const languages = [
   { name: 'Hindi', level: 'Conversational / Working Knowledge' },
 ];
 
-function App() {
+function Navigation() {
   const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <header className="site-header">
+      <div className="nav-wrapper">
+        <Link to="/" className="brand-logo" onClick={() => setMenuOpen(false)}>
+          Supravat Hazra
+        </Link>
+        <button
+          type="button"
+          className="nav-toggle"
+          id="navToggle"
+          aria-label="Toggle navigation"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((prev) => !prev)}
+        >
+          ☰
+        </button>
+        <nav className={`nav-links ${menuOpen ? 'open' : ''}`} id="navLinks">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              to={link.href}
+              className={link.className || ''}
+              onClick={() => setMenuOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function ScrollToHash() {
+  const { pathname, hash } = useLocation();
+
+  useEffect(() => {
+    if (hash) {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, hash]);
+
+  return null;
+}
+
+function HomePage() {
   const [year, setYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
@@ -190,43 +252,24 @@ function App() {
 
   return (
     <>
-      <header className="site-header">
-        <div className="nav-wrapper">
-          <a href="#hero" className="brand-logo">
-            Supravat Hazra
-          </a>
-          <button
-            type="button"
-            className="nav-toggle"
-            id="navToggle"
-            aria-label="Toggle navigation"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((prev) => !prev)}
-          >
-            ☰
-          </button>
-          <nav className={`nav-links ${menuOpen ? 'open' : ''}`} id="navLinks">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className={link.className || ''}
-                onClick={() => setMenuOpen(false)}
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
-        </div>
-      </header>
-
       <main>
         <section id="hero" className="hero-block">
           <div className="container hero-content">
             <div className="hero-copy reveal-up">
               <span className="badge">
                 <span className="status-dot" aria-hidden="true" />
-                Biotech Operations <span aria-hidden="true">|</span> GMP <span aria-hidden="true">|</span> Inventory Management <span aria-hidden="true">|</span> Data Analyst
+                <span className="badge-skills">
+                  <span className="badge-skill">
+                    Biotech Operations <span aria-hidden="true">|</span>
+                  </span>
+                  <span className="badge-skill">
+                    GMP <span aria-hidden="true">|</span>
+                  </span>
+                  <span className="badge-skill">
+                    Inventory Management <span aria-hidden="true">|</span>
+                  </span>
+                  <span className="badge-skill">Data Analyst</span>
+                </span>
               </span>
               <h1 className="name-title">
                 <span>Supravat Hazra</span>
@@ -467,12 +510,40 @@ function App() {
           <p>
             &copy; <span id="currentYear">{year}</span> Supravat Hazra. All rights reserved.
           </p>
-          <a href="#hero" className="top-anchor">
+          <a href="/#hero" className="top-anchor">
             Back to Top ↑
           </a>
         </div>
       </footer>
     </>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <ScrollToHash />
+      <div className="relative isolate min-h-screen">
+        <div
+          aria-hidden="true"
+          className="fixed inset-0 z-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${galaxyBg})` }}
+        >
+          <div className="absolute inset-0 bg-purple-950/90 mix-blend-multiply" />
+        </div>
+        <Suspense fallback={null}>
+          <StarBackground />
+        </Suspense>
+        <div className="relative z-10">
+          <Navigation />
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+      </div>
+    </BrowserRouter>
   );
 }
 
