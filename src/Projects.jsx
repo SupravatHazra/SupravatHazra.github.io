@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import useViewportHover from './useViewportHover';
 import screenshot1 from '../Screenshots/SS1.png';
 import screenshot2 from '../Screenshots/SS2.png';
 import screenshot3 from '../Screenshots/SS3.png';
@@ -189,6 +190,8 @@ export function ProjectCard() {
   const [activeScreenshot, setActiveScreenshot] = useState(2);
   const [activeCode, setActiveCode] = useState(0);
 
+  useViewportHover('.project-hover-card');
+
   const showScreenshot = (offset) => {
     setActiveScreenshot((current) => (current + offset + screenshots.length) % screenshots.length);
   };
@@ -211,7 +214,7 @@ export function ProjectCard() {
   }, [activeDialog]);
 
   return (
-    <article className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-transparent shadow-none transition-all duration-300 md:hover:-translate-y-2 md:hover:scale-[1.02] md:hover:border-purple-400 md:hover:shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 active:border-purple-400 active:shadow-[0_0_25px_rgba(168,85,247,0.4)]">
+    <article className="project-hover-card mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 bg-transparent shadow-none transition-all duration-300 md:hover:-translate-y-2 md:hover:scale-[1.02] md:hover:border-purple-400 md:hover:shadow-[0_0_25px_rgba(168,85,247,0.4)] active:scale-95 active:border-purple-400 active:shadow-[0_0_25px_rgba(168,85,247,0.4)]">
       <div className="project-preview">
         <img
           src={screenshots[activeScreenshot].src}
@@ -234,7 +237,7 @@ export function ProjectCard() {
 
           <section>
             <h3 className="text-xl font-bold text-white drop-shadow-md capitalize">Key Features</h3>
-            <ul className="mt-2 grid gap-2 text-sm text-[#c9b9d5] sm:grid-cols-2">
+            <ul className="mt-2 grid gap-2 text-sm text-[#c9b9d5] sm:grid-cols-2 lg:text-base lg:leading-[1.65]">
               {keyFeatures.map((feature) => (
                 <li key={feature} className="flex items-center gap-2">
                   <span
@@ -251,7 +254,7 @@ export function ProjectCard() {
 
           <aside className="rounded-xl border border-[#c6a4e2]/20 bg-[#c6a4e2]/[0.07] p-4">
             <h3 className="text-xl font-bold text-white drop-shadow-md capitalize">Business Impact</h3>
-            <p className="mt-2 text-sm leading-6 text-[#c9b9d5]">
+            <p className="mt-2 text-sm leading-6 text-[#c9b9d5] lg:text-base lg:leading-[1.65]">
               Eliminated hours of manual data aggregation and formatting, ensuring 100% accuracy in
               reporting and allowing the team to focus on data analysis rather than data entry.
             </p>
@@ -441,8 +444,8 @@ export function ProjectCard() {
 
 function Projects() {
   return (
-    <main className="min-h-[calc(100vh-64px)] px-5 py-16 text-[#f1e8f8] sm:px-8 sm:py-20">
-      <section className="mx-auto max-w-6xl">
+    <main className="min-h-[calc(100vh-64px)] px-5 py-16 text-[#f1e8f8] sm:px-8 sm:py-20 lg:px-[32px]">
+      <section className="site-container">
         <div className="mb-10 max-w-2xl sm:mb-14">
           <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Projects</h1>
           <p className="mt-4 text-base leading-7 text-[#c9b9d5] sm:text-lg">

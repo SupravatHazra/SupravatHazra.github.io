@@ -1,6 +1,10 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { TypeAnimation } from 'react-type-animation';
+import useViewportHover from './useViewportHover';
 import galaxyBg from './assets/galaxy-background.svg';
 import {
   BrowserRouter,
@@ -15,6 +19,13 @@ import Projects from './Projects';
 gsap.registerPlugin(ScrollTrigger);
 
 const StarBackground = lazy(() => import('./StarBackground'));
+const certificateImageFiles = Object.entries(
+  import.meta.glob('../Certificates/*.{jpg,jpeg,png,webp}', {
+    eager: true,
+    import: 'default',
+    query: '?url',
+  })
+);
 
 const navLinks = [
   { href: '/#about', label: 'About' },
@@ -76,9 +87,11 @@ const skillMetrics = [
   { label: 'GMP & QA', value: 95 },
   { label: 'Inventory Control', value: 92 },
   { label: 'Excel Automation', value: 89 },
-  { label: 'AI & Data Tools', value: 84 },
+  { label: 'AI Tools & Technologies', value: 84 },
   { label: 'Cross-Team Coordination', value: 91 },
   { label: 'Warehouse Ops', value: 90 },
+  { label: 'Data Analysis', value: 88 },
+  { label: 'Web Development Using AI', value: 85 },
 ];
 
 const certifications = [
@@ -106,7 +119,23 @@ const certifications = [
     description:
       'ISO 9001:2015 certified self-learning course on AI integrations and automated spreadsheet analysis.',
   },
-];
+].map((certificate) => {
+  const normalizedTitle = certificate.title.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const exactMatches = certificateImageFiles.filter(([path]) => {
+    const filename = path.split('/').pop().replace(/\.[^.]+$/, '');
+    return filename.toLowerCase().replace(/[^a-z0-9]/g, '') === normalizedTitle;
+  });
+  const partialMatches = certificateImageFiles.filter(([path]) => {
+    const filename = path.split('/').pop().replace(/\.[^.]+$/, '');
+    return filename.toLowerCase().replace(/[^a-z0-9]/g, '').startsWith(normalizedTitle);
+  });
+  const matches = exactMatches.length > 0 ? exactMatches : partialMatches;
+
+  return {
+    ...certificate,
+    certificateImage: matches.length === 1 ? matches[0][1] : null,
+  };
+});
 
 const education = [
   {
@@ -187,6 +216,9 @@ function ScrollToHash() {
 
 function HomePage() {
   const [year, setYear] = useState(new Date().getFullYear());
+  const [activeCertificate, setActiveCertificate] = useState(null);
+
+  useViewportHover('.card, .skill-bar');
 
   useEffect(() => {
     setYear(new Date().getFullYear());
@@ -195,18 +227,6 @@ function HomePage() {
       '.brand-logo',
       { opacity: 0, y: -20 },
       { opacity: 1, y: 0, duration: 0.8, ease: 'power3.out' }
-    );
-
-    gsap.fromTo(
-      '.hero-copy',
-      { opacity: 0, y: 40 },
-      { opacity: 1, y: 0, duration: 1.1, delay: 0.15, ease: 'power3.out' }
-    );
-
-    gsap.fromTo(
-      '.hero-visual',
-      { opacity: 0, scale: 0.94, y: 30 },
-      { opacity: 1, scale: 1, y: 0, duration: 1.2, delay: 0.25, ease: 'power3.out' }
     );
 
     gsap.utils.toArray('.reveal-up').forEach((section) => {
@@ -254,27 +274,39 @@ function HomePage() {
     <>
       <main>
         <section id="hero" className="hero-block">
-          <div className="container hero-content">
-            <div className="hero-copy reveal-up">
-              <span className="badge">
-                <span className="status-dot" aria-hidden="true" />
-                <span className="badge-skills">
-                  <span className="badge-skill">
-                    Biotech Operations <span aria-hidden="true">|</span>
-                  </span>
-                  <span className="badge-skill">
-                    GMP <span aria-hidden="true">|</span>
-                  </span>
-                  <span className="badge-skill">
-                    Inventory Management <span aria-hidden="true">|</span>
-                  </span>
-                  <span className="badge-skill">Data Analyst</span>
-                </span>
-              </span>
-              <h1 className="name-title">
+          <div className="container hero-content flex flex-col-reverse items-center justify-center gap-10">
+            <motion.div
+              className="hero-copy"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            >
+              <p className="hero-greeting text-white/80">Hello I'm</p>
+              <h1 className="name-title text-5xl md:text-[clamp(3rem,5vw,4.5rem)] font-bold text-white">
                 <span>Supravat Hazra</span>
               </h1>
-              <h2>Production Executive</h2>
+              <h2 className="hero-role">
+                And I'm{' '}
+                <TypeAnimation
+                  className="role-text text-purple-400 font-bold"
+                  sequence={[
+                    'Production Executive',
+                    2000,
+                    'Biotech Operations Specialist',
+                    2000,
+                    'GMP & Quality Controller',
+                    2000,
+                    'AI & Excel Automation Enthusiast',
+                    2000,
+                    'Data Analyst',
+                    2000,
+                    'Web Developer',
+                    2000,
+                  ]}
+                  speed={50}
+                  repeat={Infinity}
+                />
+              </h2>
               <p>
                 Experienced in biotech production floor coordination, GMP compliance, quality control,
                 and warehouse inventory management (FIFO). Leveraging a mathematics background and
@@ -293,13 +325,18 @@ function HomePage() {
                   LinkedIn Profile
                 </a>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="hero-visual reveal-up">
-              <div className="hero-image-wrap">
+            <motion.div
+              className="hero-visual"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: 'easeOut', delay: 0.15 }}
+            >
+              <div className="hero-image-wrap rounded-full border border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.3)] transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] hover:border-purple-400 hover:shadow-[0_0_25px_rgba(168,85,247,0.4)]">
                 <img src="/profile-photo.jpg" alt="Supravat Hazra portrait" />
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
@@ -454,7 +491,18 @@ function HomePage() {
               {certifications.map((item) => (
                 <div className="card cert-card reveal-up" key={item.title}>
                   <span className="cert-year">{item.year}</span>
-                  <h3>{item.title}</h3>
+                  <div className="cert-card-heading">
+                    <h3>{item.title}</h3>
+                    {item.certificateImage && (
+                      <button
+                        type="button"
+                        className="btn btn-outline certificate-view-button"
+                        onClick={() => setActiveCertificate(item)}
+                      >
+                        View Certificate
+                      </button>
+                    )}
+                  </div>
                   <p>{item.description}</p>
                 </div>
               ))}
@@ -504,6 +552,14 @@ function HomePage() {
           </div>
         </section>
       </main>
+      {activeCertificate &&
+        createPortal(
+          <CertificateModal
+            certificate={activeCertificate}
+            onClose={() => setActiveCertificate(null)}
+          />,
+          document.body
+        )}
 
       <footer className="site-footer">
         <div className="container footer-content">
@@ -516,6 +572,55 @@ function HomePage() {
         </div>
       </footer>
     </>
+  );
+}
+
+function CertificateModal({ certificate, onClose }) {
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', closeOnEscape);
+    };
+  }, [onClose]);
+
+  return (
+    <div
+      className="certificate-modal-backdrop"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section
+        className="certificate-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label={`${certificate.title} certificate`}
+      >
+        <button
+          type="button"
+          className="btn btn-outline certificate-modal-close"
+          onClick={onClose}
+          aria-label="Close certificate"
+          autoFocus
+        >
+          ×
+        </button>
+        <img src={certificate.certificateImage} alt={certificate.title} />
+      </section>
+    </div>
   );
 }
 
