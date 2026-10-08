@@ -6,6 +6,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { TypeAnimation } from 'react-type-animation';
 import useViewportHover from './useViewportHover';
 import galaxyBg from './assets/galaxy-background.svg';
+import profilePhoto from '../profile-photo.jpg';
 import {
   BrowserRouter,
   Link,
@@ -334,7 +335,7 @@ function HomePage() {
               transition={{ duration: 0.8, ease: 'easeOut', delay: 0.15 }}
             >
               <div className="hero-image-wrap rounded-full border border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.3)] transition-all duration-300 hover:-translate-y-2 hover:scale-[1.02] hover:border-purple-400 hover:shadow-[0_0_25px_rgba(168,85,247,0.4)]">
-                <img src="/profile-photo.jpg" alt="Supravat Hazra portrait" />
+                <img src={profilePhoto} alt="Supravat Hazra portrait" />
               </div>
             </motion.div>
           </div>
