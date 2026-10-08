@@ -549,6 +549,13 @@ function HomePage() {
                   linkedin.com/in/supravat-hazra
                 </a>
               </div>
+              <a
+                className="btn btn-primary"
+                href="/resume/Supravat_Hazra_Resume.pdf"
+                download
+              >
+                Download Resume
+              </a>
             </div>
           </div>
         </section>
