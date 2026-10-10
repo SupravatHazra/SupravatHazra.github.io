@@ -75,6 +75,12 @@ img {
   height: 100%;
 }
 
+@media (max-width: 767px) {
+  .project-hover-card > .p-6 {
+    padding: clamp(1rem, 5vw, 1.5rem);
+  }
+}
+
 .project-button {
   display: inline-flex;
   align-items: center;
@@ -1102,6 +1108,18 @@ body {
   color: #f1e8f8;
   border-bottom: 1px solid rgba(210, 183, 232, 0.15);
   background: linear-gradient(125deg, rgba(20, 8, 30, 0.24), rgba(29, 12, 43, 0.16));
+}
+
+@media (max-width: 767px) {
+  .hero-block {
+    background:
+      radial-gradient(
+        ellipse 85% 38% at 50% 27%,
+        rgba(168, 117, 212, 0.3),
+        transparent 74%
+      ),
+      linear-gradient(125deg, rgba(20, 8, 30, 0.24), rgba(29, 12, 43, 0.16));
+  }
 }
 
 .hero-block h1 {
