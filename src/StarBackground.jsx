@@ -1,10 +1,22 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Particles, { ParticlesProvider } from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
 
 const initializeParticles = (engine) => loadSlim(engine);
 
 function StarBackground() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
+    () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updatePreference = (event) => setPrefersReducedMotion(event.matches);
+
+    mediaQuery.addEventListener('change', updatePreference);
+    return () => mediaQuery.removeEventListener('change', updatePreference);
+  }, []);
+
   const particleOptions = useMemo(() => ({
     fullScreen: { enable: false },
     background: { color: { value: 'transparent' } },
@@ -15,7 +27,7 @@ function StarBackground() {
         maxWidth: 768,
         options: {
           particles: {
-            number: { value: 30 },
+            number: { value: 30, density: { enable: false } },
           },
         },
       },
@@ -31,7 +43,7 @@ function StarBackground() {
       opacity: {
         value: { min: 0.28, max: 0.9 },
         animation: {
-          enable: true,
+          enable: !prefersReducedMotion,
           speed: 0.7,
           sync: false,
           startValue: 'random',
@@ -44,7 +56,7 @@ function StarBackground() {
         enable: false,
       },
       move: {
-        enable: true,
+        enable: !prefersReducedMotion,
         direction: 'top-right',
         speed: 0.5,
         random: true,
@@ -58,13 +70,13 @@ function StarBackground() {
         onClick: { enable: false },
       },
     },
-  }), []);
+  }), [prefersReducedMotion]);
 
   return (
     <ParticlesProvider init={initializeParticles}>
       <Particles
         id="galaxy-stars"
-        className="pointer-events-none absolute inset-0 h-full w-full"
+        className="pointer-events-none fixed inset-0 z-0"
         options={particleOptions}
       />
     </ParticlesProvider>
